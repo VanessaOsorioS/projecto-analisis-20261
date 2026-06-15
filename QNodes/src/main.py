@@ -90,7 +90,8 @@ def iniciar():
     condiciones =    "11111111111111111111"
     alcance =        "11111111111111111111"
     #                 ABCDEFGHIJKLMNOPQRST
-    mecanismo =      "01111111111111111111"
+    mecanismo =      "01111111111111111110"
+
 
 
 
@@ -133,6 +134,12 @@ def iniciar():
 
 
     gestor_redes = Manager(estado_inicial)
+
+    gestor_redes.generar_red(
+        dimensiones=len(estado_inicial),
+        datos_deterministas=True
+    )
+
     print("Archivo TPM:", gestor_redes.tpm_filename)
     mpt = gestor_redes.cargar_red()
 
