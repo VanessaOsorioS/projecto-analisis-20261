@@ -98,32 +98,6 @@ def iniciar():
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     n_nodos = len(estado_inicial)
     pagina = aplicacion.pagina_red_muestra
     hoja = obtener_hoja(n_nodos, pagina)
