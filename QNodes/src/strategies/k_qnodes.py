@@ -20,17 +20,13 @@ from src.constants.base import (
 from src.models.base.application import aplicacion
 from src.models.enums.notation import Notation
 
-
 KQNODES_LABEL = "KQNodes"
 KQNODES_STRATEGY_TAG = f"{KQNODES_LABEL}_strategy"
 KQNODES_ANALYSIS_TAG = f"{KQNODES_LABEL}_analysis"
 
 
-
-
 def stirling2(n: int, k: int) -> int:
     """Stirling number of the second kind S(n,k).
-
 
     Número de formas de particionar un conjunto de n elementos
     etiquetados en k subconjuntos no vacíos.
@@ -49,11 +45,8 @@ def stirling2(n: int, k: int) -> int:
     return total // factorial(k)
 
 
-
-
 def _rgs_generator(m: int, k: int):
     """Genera todas las restricted growth strings de longitud m con exactamente k bloques.
-
 
     Cada RGS es una lista a[0..m-1] donde:
       - a[0] = 0
@@ -70,10 +63,7 @@ def _rgs_generator(m: int, k: int):
                 break
             yield from recurse(prefix + [nxt], max(max_so_far, nxt))
 
-
     yield from recurse([], -1)
-
-
 
 
 def _rgs_to_grupos(rgs: list[int], vertices: list) -> list[list]:
@@ -83,8 +73,6 @@ def _rgs_to_grupos(rgs: list[int], vertices: list) -> list[list]:
     for idx, g in enumerate(rgs):
         grupos[g].append(vertices[idx])
     return grupos
-
-
 
 
 def fmt_kparte_q(groups: list[list[tuple[int, int]]]) -> str:
@@ -103,8 +91,6 @@ def fmt_kparte_q(groups: list[list[tuple[int, int]]]) -> str:
     return "".join(purv_rows) + "\n" + "".join(mech_rows)
 
 
-
-
 def tensor_product_k(distribuciones: list[np.ndarray]) -> np.ndarray:
     if not distribuciones:
         return np.array([])
@@ -114,17 +100,13 @@ def tensor_product_k(distribuciones: list[np.ndarray]) -> np.ndarray:
     return result
 
 
-
-
 class KQNodes(SIA):
     """
     KQNodes: Estrategia híbrida para la k-partición de mínima información (k-MIP).
 
-
     Para k=2 delega en QNodes (Queyranne exacto, resultados idénticos).
     Para k>2 selecciona automáticamente entre dos modos según el tamaño
     del sistema:
-
 
       Modo exhaustivo (óptimo global):
         Se activa cuando S(2n, k) ≤ 1e5, donde n es el número de nodos
@@ -133,7 +115,6 @@ class KQNodes(SIA):
         Adecuado para validación experimental en sistemas pequeños (típicamente
         n ≤ 5 para cualquier k, n ≤ 6 para k=3).
 
-
       Modo greedy (alta calidad, escalable):
         Para sistemas más grandes donde S(2n, k) excede el umbral.
         Parte de la bipartición óptima de Queyranne y subdivide
@@ -141,13 +122,11 @@ class KQNodes(SIA):
         pérdida EMD. No garantiza optimalidad global pero mantiene
         tiempos de ejecución razonables.
 
-
     La evaluación de pérdida es idéntica en ambos modos:
     EMD efecto entre la distribución del subsistema y el vector de
     probabilidades marginales por nodo de la k-partición (equivalente al
     producto tensorial de k distribuciones marginales bajo independencia
     condicional).
-
 
     Args:
         tpm: Matriz de probabilidad de transición.
@@ -156,7 +135,6 @@ class KQNodes(SIA):
                             si False fuerza modo greedy;
                             si None (default) selección automática por S(2n,k).
     """
-
 
     def __init__(self, tpm: np.ndarray, k: int = 2,
                  busqueda_exhaustiva: bool | None = None):
@@ -174,7 +152,6 @@ class KQNodes(SIA):
         self.indices_mecanismo: np.ndarray
         self.logger = SafeLogger(KQNODES_STRATEGY_TAG)
 
-
     @profile(context={TYPE_TAG: KQNODES_ANALYSIS_TAG})
     def aplicar_estrategia(
         self,
@@ -186,9 +163,7 @@ class KQNodes(SIA):
         if self.k == 2:
             return self._delegar_qnodes(estado_inicial, condicion, alcance, mecanismo)
 
-
         self.sia_preparar_subsistema(estado_inicial, condicion, alcance, mecanismo)
-
 
         futuro = tuple(
             (EFFECT, i) for i in self.sia_subsistema.indices_ncubos
@@ -199,9 +174,7 @@ class KQNodes(SIA):
         vertices = list(presente + futuro)
         self.vertices = set(vertices)
 
-
         groups, perdida, dist_part = self.find_k_mip(vertices, self.k)
-
 
         return Solution(
             estrategia=KQNODES_LABEL,
@@ -212,7 +185,6 @@ class KQNodes(SIA):
             particion=fmt_kparte_q(groups),
         )
 
-
     def _delegar_qnodes(self, estado_inicial: str, condicion: str,
                         alcance: str, mecanismo: str):
         from src.strategies.q_nodes import QNodes
@@ -220,7 +192,6 @@ class KQNodes(SIA):
         sol = qn.aplicar_estrategia(estado_inicial, condicion, alcance, mecanismo)
         sol.estrategia = KQNODES_LABEL
         return sol
-
 
     def _usar_exhaustivo(self, num_vertices: int) -> bool:
         """Determina si usar búsqueda exhaustiva según umbral S(2n,k)."""
@@ -230,25 +201,20 @@ class KQNodes(SIA):
             return False
         return stirling2(num_vertices, self.k) <= 100_000
 
-
     def find_k_mip(
         self, vertices: list, k: int
     ) -> tuple[list[list[tuple[int, int]]], float, np.ndarray]:
         n_vertices = len(vertices)
 
-
         if self._usar_exhaustivo(n_vertices):
             return self._exhaustivo(vertices, k)
 
-
         return self._greedy(vertices, k)
-
 
     def _exhaustivo(
         self, vertices: list, k: int
     ) -> tuple[list[list[tuple[int, int]]], float, np.ndarray]:
         """Modo exhaustivo: genera y evalúa todas las k-particiones posibles.
-
 
         Utiliza restricted growth strings para enumerar exactamente S(m,k)
         particiones, donde m = |vertices|. Garantiza la k-MIP óptima global.
@@ -257,10 +223,8 @@ class KQNodes(SIA):
         best_groups = None
         best_dist = None
 
-
         total = stirling2(len(vertices), k)
         evaluated = 0
-
 
         for rgs in _rgs_generator(len(vertices), k):
             groups = _rgs_to_grupos(rgs, vertices)
@@ -271,15 +235,12 @@ class KQNodes(SIA):
                 best_groups = groups
                 best_dist = dist
 
-
         return best_groups, best_emd, best_dist
-
 
     def _greedy(
         self, vertices: list, k: int
     ) -> tuple[list[list[tuple[int, int]]], float, np.ndarray]:
         """Modo greedy: biparticiones sucesivas desde Queyranne.
-
 
         Parte de la bipartición óptima y subdivide iterativamente el
         grupo que más reduce la pérdida EMD. Escalable pero no garantiza
@@ -289,13 +250,11 @@ class KQNodes(SIA):
         groups = [list(mip), list(set(vertices) - set(mip))]
         best_emd, best_dist = self.evaluate_k_partition(groups)
 
-
         while len(groups) < k:
             best_idx = -1
             best_split = None
             best_candidate_emd = float("inf")
             best_candidate_dist = None
-
 
             for idx, group in enumerate(groups):
                 if len(group) < 2:
@@ -310,10 +269,8 @@ class KQNodes(SIA):
                         best_idx = idx
                         best_split = (g1, g2)
 
-
             if best_idx == -1:
                 break
-
 
             groups = (
                 groups[:best_idx]
@@ -323,9 +280,7 @@ class KQNodes(SIA):
             best_emd = best_candidate_emd
             best_dist = best_candidate_dist
 
-
         return groups, best_emd, best_dist
-
 
     def _enumerate_splits(
         self, group: list[tuple[int, int]]
@@ -339,24 +294,19 @@ class KQNodes(SIA):
         g2 = list(set(group) - set(mip))
         return [(g1, g2)]
 
-
     def _queyranne(self, vertices: list[tuple[int, int]]) -> tuple:
         memoria: dict = {}
-
 
         for i in range(len(vertices) - 1):
             omegas_ciclo = [vertices[0]]
             deltas_ciclo = vertices[1:]
 
-
             emd_particion_candidata = INFTY_POS
             dist_particion_candidata = None
-
 
             for j in range(len(deltas_ciclo) - 1):
                 emd_local = 1e5
                 indice_mip: int = 0
-
 
                 for k_delta in range(len(deltas_ciclo)):
                     emd_union, emd_delta, dist_marginal_delta = (
@@ -364,19 +314,15 @@ class KQNodes(SIA):
                     )
                     emd_iteracion = emd_union - emd_delta
 
-
                     if emd_iteracion < emd_local:
                         emd_local = emd_iteracion
                         indice_mip = k_delta
 
-
                     emd_particion_candidata = emd_delta
                     dist_particion_candidata = dist_marginal_delta
 
-
                 omegas_ciclo.append(deltas_ciclo[indice_mip])
                 deltas_ciclo.pop(indice_mip)
-
 
             memoria[
                 tuple(
@@ -385,7 +331,6 @@ class KQNodes(SIA):
                     else deltas_ciclo
                 )
             ] = emd_particion_candidata, dist_particion_candidata
-
 
             par_candidato = (
                 [omegas_ciclo[LAST_IDX]]
@@ -397,14 +342,11 @@ class KQNodes(SIA):
                 else deltas_ciclo
             )
 
-
             omegas_ciclo.pop()
             omegas_ciclo.append(par_candidato)
             vertices = omegas_ciclo
 
-
         return min(memoria, key=lambda k: memoria[k][0])
-
 
     def _funcion_submodular(
         self,
@@ -413,11 +355,9 @@ class KQNodes(SIA):
     ):
         self.clave_submodular = [[], []]
 
-
         self._definir_clave(deltas)
         idxs_alcance_delta = self.clave_submodular[EFFECT]
         dims_mecanismo_delta = self.clave_submodular[ACTUAL]
-
 
         particion_delta = self.sia_subsistema.bipartir(
             np.array(idxs_alcance_delta, dtype=np.int8),
@@ -426,14 +366,11 @@ class KQNodes(SIA):
         vector_delta_marginal = particion_delta.distribucion_marginal()
         emd_delta = emd_efecto(vector_delta_marginal, self.sia_dists_marginales)
 
-
         for omega in omegas:
             self._definir_clave(omega)
 
-
         idxs_alcance_union = self.clave_submodular[EFFECT]
         dims_mecanismo_union = self.clave_submodular[ACTUAL]
-
 
         particion_union = self.sia_subsistema.bipartir(
             np.array(idxs_alcance_union, dtype=np.int8),
@@ -442,9 +379,7 @@ class KQNodes(SIA):
         vector_union_marginal = particion_union.distribucion_marginal()
         emd_union = emd_efecto(vector_union_marginal, self.sia_dists_marginales)
 
-
         return emd_union, emd_delta, vector_delta_marginal
-
 
     def _definir_clave(self, conjunto: Union[tuple[int, int], list[tuple[int, int]]]):
         if isinstance(conjunto, tuple):
@@ -457,7 +392,6 @@ class KQNodes(SIA):
         self.clave_submodular[EFFECT].sort()
         return self.clave_submodular
 
-
     def evaluate_k_partition(
         self, groups: list[list[tuple[int, int]]]
     ) -> tuple[float, np.ndarray]:
@@ -468,10 +402,8 @@ class KQNodes(SIA):
             for p in purv:
                 future_to_mech[p] = mech
 
-
         n = len(self.sia_subsistema.ncubos)
         part_dist = np.empty(n, dtype=np.float32)
-
 
         for i, cube in enumerate(self.sia_subsistema.ncubos):
             if cube.indice in future_to_mech:
@@ -483,7 +415,6 @@ class KQNodes(SIA):
                 else:
                     marginalized = cube.marginalizar(cube.dims)
 
-
                 prob = marginalized.data
                 if marginalized.dims.size:
                     sub_state = tuple(
@@ -493,14 +424,12 @@ class KQNodes(SIA):
                     if aplicacion.notacion_indexado == Notation.LIL_ENDIAN.value:
                         sub_state = sub_state[::-1]
                     prob = marginalized.data[sub_state]
-                part_dist[i] = 1 - float(prob)
+                part_dist[i] = float(prob)
             else:
-                part_dist[i] = 0.0
+                part_dist[i] = 1.0
 
-
-        emd = emd_efecto(part_dist, self.sia_dists_marginales)
-        return emd, part_dist
-
+        emd_efecto_val = emd_efecto(part_dist, self.sia_dists_marginales)
+        return emd_efecto_val, part_dist
 
     def nodes_complement(self, nodes: list[tuple[int, int]]) -> list[tuple[int, int]]:
         return list(set(self.vertices) - set(nodes))
