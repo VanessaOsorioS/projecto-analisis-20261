@@ -6,9 +6,9 @@ def main():
     """Inicializar el aplicativo."""
 
     aplicacion.profiler_habilitado = True
-    # aplicacion.pagina_sample_network = "B"
+    aplicacion.pagina_sample_network = "B"
 
-    iniciar()
+    iniciar(estado_inicio="100000")
 
 
 if __name__ == "__main__":
