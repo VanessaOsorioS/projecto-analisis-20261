@@ -36,7 +36,8 @@ def ejecutar_con_tiempo(
 
 def main():
     k = int(sys.argv[1]) if len(sys.argv) > 1 else 3
-    iteracion_especifica = int(sys.argv[2]) if len(sys.argv) > 2 else None
+    iteracion_especifica = int(sys.argv[2]) if len(sys.argv) > 2 and sys.argv[2] != "" else None
+    n_bits_arg = int(sys.argv[3]) if len(sys.argv) > 3 and sys.argv[3] != "" else None
     ruta_excel = Path(
         os.getenv(
             "GEOMIP_INPUT_XLSX",
@@ -46,7 +47,7 @@ def main():
     sufijo = f"_it{iteracion_especifica}" if iteracion_especifica else ""
     ruta_salida = GEOMIP_ROOT / "results" / f"resultados_KGeoMIP_k{k}{sufijo}.xlsx"
 
-    estado_inicio = inferir_estado_inicial()
+    estado_inicio = inferir_estado_inicial() if n_bits_arg is None else ("1" + "0" * (n_bits_arg - 1))
     condiciones = "1" * len(estado_inicio)
     tpm_path = resolver_tpm_path(estado_inicio)
     tpm = np.genfromtxt(tpm_path, delimiter=",")
